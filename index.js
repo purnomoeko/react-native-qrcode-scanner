@@ -15,18 +15,24 @@ import {
   PermissionsAndroid,
 } from 'react-native';
 
-import Permissions from 'react-native-permissions';
+import {
+  request,
+  PERMISSIONS,
+  AndroidPermission,
+} from 'react-native-permissions';
 import { RNCamera as Camera } from 'react-native-camera';
 
 const PERMISSION_AUTHORIZED = 'authorized';
 const CAMERA_PERMISSION = 'camera';
 const CAMERA_FLASH_MODE = Camera.Constants.FlashMode;
 const CAMERA_FLASH_MODES = [
-  CAMERA_FLASH_MODE.torch, CAMERA_FLASH_MODE.on, CAMERA_FLASH_MODE.off,
-  CAMERA_FLASH_MODE.auto];
+  CAMERA_FLASH_MODE.torch,
+  CAMERA_FLASH_MODE.on,
+  CAMERA_FLASH_MODE.off,
+  CAMERA_FLASH_MODE.auto,
+];
 
 export default class QRCodeScanner extends Component {
-  
   static propTypes = {
     onRead: PropTypes.func.isRequired,
     vibrate: PropTypes.bool,
@@ -50,7 +56,6 @@ export default class QRCodeScanner extends Component {
     flashMode: PropTypes.oneOf(CAMERA_FLASH_MODES),
     cameraProps: PropTypes.object,
   };
-
 
   static defaultProps = {
     onRead: () => console.log('QR code scanned!'),
@@ -114,15 +119,15 @@ export default class QRCodeScanner extends Component {
       disableVibrationByUser: false,
     };
 
-    this._scannerTimeout    = null;
+    this._scannerTimeout = null;
     this._handleBarCodeRead = this._handleBarCodeRead.bind(this);
   }
 
   componentDidMount() {
     if (Platform.OS === 'ios') {
-      Permissions.request(CAMERA_PERMISSION).then(response => {
+      request(PERMISSIONS.IOS.CAMERA).then(cameraStatus => {
         this.setState({
-          isAuthorized: response === PERMISSION_AUTHORIZED,
+          isAuthorized: cameraStatus === 'granted',
           isAuthorizationChecked: true,
         });
       });
@@ -130,7 +135,7 @@ export default class QRCodeScanner extends Component {
       Platform.OS === 'android' &&
       this.props.checkAndroid6Permissions
     ) {
-      PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.CAMERA, {
+      request(PERMISSIONS.ANDROID.CAMERA, {
         title: this.props.permissionDialogTitle,
         message: this.props.permissionDialogMessage,
       }).then(granted => {
@@ -141,7 +146,7 @@ export default class QRCodeScanner extends Component {
     } else {
       this.setState({ isAuthorized: true, isAuthorizationChecked: true });
     }
-    
+
     if (this.props.fadeIn) {
       Animated.sequence([
         Animated.delay(1000),
@@ -154,12 +159,10 @@ export default class QRCodeScanner extends Component {
   }
 
   componentWillUnmount() {
-
-    if(this._scannerTimeout !== null) {
+    if (this._scannerTimeout !== null) {
       clearTimeout(this._scannerTimeout);
     }
     this._scannerTimeout = null;
-
   }
 
   disable() {
@@ -210,7 +213,12 @@ export default class QRCodeScanner extends Component {
       } else {
         return (
           <View style={styles.rectangleContainer}>
-            <View style={[styles.rectangle, this.props.markerStyle ? this.props.markerStyle : null]} />
+            <View
+              style={[
+                styles.rectangle,
+                this.props.markerStyle ? this.props.markerStyle : null,
+              ]}
+            />
           </View>
         );
       }
@@ -319,4 +327,4 @@ const styles = StyleSheet.create({
     borderColor: '#00FF00',
     backgroundColor: 'transparent',
   },
-})
+});
